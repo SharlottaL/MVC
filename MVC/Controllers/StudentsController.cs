@@ -20,11 +20,15 @@ namespace MVC.Controllers
         }
 
         // GET: Students
-        public async Task<IActionResult> Index(string sortOrder, string searchString)
+        public async Task<IActionResult> Index(string sortOrder, string searchString, string currentFilter, int? pageNumber)
         {
+            ViewData["CurrentSort"] = sortOrder;
             ViewData["NameSortParam"] = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
             ViewData["DateSortParam"] = sortOrder == "Date" ? "date_desc" : "Date";
-            ViewData["CurrentFilter"] = searchString;
+            if (searchString != null) pageNumber = 1;
+            else searchString = currentFilter;
+
+                ViewData["CurrentFilter"] = searchString;
 
             IQueryable<Student> students = from s in _context.Students select s;
             if (!String.IsNullOrEmpty(searchString))
@@ -36,7 +40,8 @@ namespace MVC.Controllers
                 case "date_desc": students = students.OrderByDescending(s => s.EnrollmentDate);     break;
                 case "Date": students = students.OrderBy(s => s.EnrollmentDate);                    break;
             }
-            return View(students);
+            int pageSize = 3;
+            return View(await PaginatedList<Student>.CreateAsync(students.AsNoTracking(), pageNumber ?? 1, pageSize));
         }
 
         // GET: Students/Details/5
