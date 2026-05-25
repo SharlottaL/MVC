@@ -1,4 +1,10 @@
+﻿using ContosoUniversity.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using MVC.Data;
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDbContext<MVCContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("MVCContext") ?? throw new InvalidOperationException("Connection string 'MVCContext' not found.")));
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -19,6 +25,16 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthorization();
+using (IServiceScope scope = app.Services.CreateScope())
+{
+    IServiceProvider services = scope.ServiceProvider;
+
+
+
+    MVCContext context = services.GetRequiredService<MVCContext>();
+    context.Database.EnsureCreated();
+    DbInitializer.Initialize(context);
+}
 
 app.MapControllerRoute(
     name: "default",
